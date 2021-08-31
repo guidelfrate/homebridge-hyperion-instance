@@ -12,11 +12,11 @@ module.exports = function (homebridge) {
 
   Characteristic = homebridge.hap.Characteristic;
 
-  homebridge.registerAccessory('homebridge-hyperion-control', 'HyperionControl', HyperionControl);
+  homebridge.registerAccessory('homebridge-hyperion-instance', 'HyperionInstance', HyperionInstance);
 
 }
 
-function HyperionControl (log, config) {
+function HyperionInstance (log, config) {
 
     this.log = log;
 
@@ -24,6 +24,7 @@ function HyperionControl (log, config) {
     this.port = config.port || 8090;
     this.url = config.url + ":" + this.port + "/json-rpc";
     this.token = config.token || 0;
+    this.instance = config.instance || 0;
     
     this.headersData = { "Content-Type" : "application/json" };
 
@@ -38,7 +39,7 @@ function HyperionControl (log, config) {
     this.model = packageJson.name;
     this.firmware = packageJson.version;
 
-    this.service = new Service.Lightbulb(this.name);
+    this.service = new Service.Switch(this.name);
 
 }
 
@@ -82,7 +83,7 @@ HyperionControl.prototype = {
         }
     
     },
-
+  
     getState: function (callback) {
 
         callback(null, savedState);
@@ -91,9 +92,9 @@ HyperionControl.prototype = {
 
             if(response != "error"){
             
-                this.service.getCharacteristic(Characteristic.On).updateValue(response.info.components[0].enabled);
+                this.service.getCharacteristic(Characteristic.On).updateValue(response.info.instance[this.instance].running);
             
-                savedState = response.info.components[0].enabled;
+                savedState = response.info.instance[this.instance].running;
             
             } else {
 
@@ -112,8 +113,10 @@ HyperionControl.prototype = {
     },
 
     setState: function (value, callback) {
+      
+        var 
     
-        this.fetchData('{"command":"componentstate","componentstate":{"component":"ALL","state":'+ value +'}}', function (response) {
+        this.fetchData('{"command":"instance","subcommand":"'+ ((value) ? "startInstance" : "stopInstance") +'","instance":'+ this.instance +'}', function (response) {
 
             var stateString = (value) ? "ON" : "OFF";
          
@@ -125,7 +128,7 @@ HyperionControl.prototype = {
 
     },
   
-    getBrightness: function (callback){
+/*    getBrightness: function (callback){
 
         callback(null, savedBrightness);
 
@@ -153,7 +156,7 @@ HyperionControl.prototype = {
   
         }.bind(this));
 
-    },
+    },*/
 
     identify: function (callback) {
 
@@ -177,9 +180,9 @@ HyperionControl.prototype = {
             .on('get', this.getState.bind(this))
             .on('set', this.setState.bind(this));
 
-        this.service.addCharacteristic(Characteristic.Brightness)
-            .on("get", this.getBrightness.bind(this))
-            .on("set", this.setBrightness.bind(this));
+//         this.service.addCharacteristic(Characteristic.Brightness)
+//             .on("get", this.getBrightness.bind(this))
+//             .on("set", this.setBrightness.bind(this));
         
         return [this.informationService, this.service];
 
