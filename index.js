@@ -3,7 +3,7 @@ var packageJson = require('./package.json');
 var fetch = require('node-fetch');
 
 var savedState = false;
-var savedBrightness = 0;
+// var savedBrightness = 0;
 var errorCount = 0;
 
 module.exports = function (homebridge) {
@@ -43,7 +43,7 @@ function HyperionInstance (log, config) {
 
 }
 
-HyperionControl.prototype = {
+HyperionInstance.prototype = {
 
     fetchData: async function (bodyData, callback) {
         
